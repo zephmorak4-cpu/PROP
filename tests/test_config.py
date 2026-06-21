@@ -8,6 +8,12 @@ def test_csv_parsing():
     assert settings.telegram_admin_ids == ["1", "2"]
 
 
+def test_numeric_admin_id_is_coerced_to_list():
+    settings = Settings(telegram_admin_ids=6780870656)
+
+    assert settings.telegram_admin_ids == ["6780870656"]
+
+
 def test_supabase_runtime_state_is_the_default_store():
     settings = Settings()
 

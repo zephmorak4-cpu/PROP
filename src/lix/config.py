@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     def parse_csv(cls, value):
         if value is None:
             return []
+        if isinstance(value, int):
+            return [str(value)]
         if isinstance(value, str):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
