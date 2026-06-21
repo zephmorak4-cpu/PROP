@@ -1,6 +1,6 @@
 # Runtime Environment
 
-Configure these variables in Railway or a local `.env` file.
+Configure these variables in Render or a local `.env` file.
 
 Required for live operation:
 
