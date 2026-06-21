@@ -1,7 +1,10 @@
 import httpx
+import logging
 
 from lix.config import Settings
 from lix.domain.models import TradeIdea, TradeUpdate
+
+logger = logging.getLogger(__name__)
 
 
 class TelegramClient:
@@ -19,8 +22,15 @@ class TelegramClient:
             "disable_web_page_preview": True,
         }
         async with httpx.AsyncClient(timeout=15) as client:
-            response = await client.post(url, json=payload)
-            response.raise_for_status()
+            try:
+                response = await client.post(url, json=payload)
+                response.raise_for_status()
+            except httpx.HTTPStatusError:
+                logger.exception("Telegram message rejected by Telegram API")
+                return False
+            except httpx.HTTPError:
+                logger.exception("Telegram message delivery failed")
+                return False
         return True
 
     async def send_trade_idea(self, idea: TradeIdea) -> bool:
