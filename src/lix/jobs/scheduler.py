@@ -6,7 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from lix.config import Settings
 from lix.db.repository import Repository
 from lix.intelligence.engine import LixIntelligenceEngine
-from lix.providers.alpha_vantage import AlphaVantageProvider
+from lix.providers.fmp_market_data import FinancialModelingPrepMarketDataProvider
 from lix.services.market_scanner import MarketScanner
 from lix.services.pair_ranking_service import PairRankingService
 from lix.services.reporting import ReportingService
@@ -20,7 +20,9 @@ class LixScheduler:
     def __init__(self, settings: Settings):
         self.settings = settings
         self.scheduler = BackgroundScheduler(timezone="UTC")
-        self.market_data = AlphaVantageProvider(settings.alpha_vantage_api_key)
+        self.market_data = FinancialModelingPrepMarketDataProvider(
+            settings.financial_modeling_prep_api_key
+        )
         self.engine = LixIntelligenceEngine(settings=settings, market_data=self.market_data)
         self.telegram = TelegramClient(settings)
         self.repository = Repository(settings)
