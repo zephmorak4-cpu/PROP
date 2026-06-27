@@ -1,0 +1,43 @@
+name: LI-X External Clock
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/10 * * * *"
+
+concurrency:
+  group: lix-external-clock
+  cancel-in-progress: true
+
+jobs:
+  wake-and-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Wake service
+        run: |
+          curl --retry 3 --retry-delay 20 --max-time 120 \
+            "${{ secrets.LIX_BASE_URL }}/health"
+
+      - name: Refresh pair rankings occasionally
+        run: |
+          minute="$(date -u +%M)"
+          if [ $((10#$minute % 30)) -eq 0 ]; then
+            curl --retry 2 --retry-delay 10 --max-time 180 \
+              -X POST "${{ secrets.LIX_BASE_URL }}/admin/pair-rankings/refresh" \
+              -H "X-Admin-Key: ${{ secrets.LIX_ADMIN_API_KEY }}"
+          else
+            echo "Skipping pair ranking refresh on minute $minute"
+          fi
+
+      - name: Run market scan
+        run: |
+          curl --retry 2 --retry-delay 10 --max-time 240 \
+            -X POST "${{ secrets.LIX_BASE_URL }}/admin/scan-now" \
+            -H "X-Admin-Key: ${{ secrets.LIX_ADMIN_API_KEY }}"
+
+      - name: Evaluate trade health
+        run: |
+          curl --retry 2 --retry-delay 10 --max-time 180 \
+            -X POST "${{ secrets.LIX_BASE_URL }}/admin/trade-health/evaluate" \
+            -H "X-Admin-Key: ${{ secrets.LIX_ADMIN_API_KEY }}"
