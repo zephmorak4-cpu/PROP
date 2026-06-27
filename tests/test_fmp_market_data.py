@@ -31,3 +31,9 @@ def test_fmp_ignores_error_payload():
     candles = provider._parse_candles("EURUSD", "5m", {"Error Message": "bad"}, limit=10)
 
     assert candles == []
+
+
+def test_fmp_maps_li_x_default_timeframe_to_supported_forex_interval():
+    provider = FinancialModelingPrepMarketDataProvider(api_key="test")
+
+    assert provider._map_timeframe("15m") == "5min"
