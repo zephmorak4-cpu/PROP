@@ -21,6 +21,21 @@ class Repository:
             return
         self.client.table("lix_active_trades").insert(trade.model_dump(mode="json")).execute()
 
+    async def active_trade_exists(self, trade: ActiveTrade) -> bool:
+        if not self.client:
+            return False
+        result = (
+            self.client.table("lix_active_trades")
+            .select("id")
+            .eq("status", "active")
+            .eq("pair", trade.pair)
+            .eq("direction", trade.direction.value)
+            .eq("strategy", trade.strategy)
+            .limit(1)
+            .execute()
+        )
+        return bool(result.data)
+
     async def list_active_trades(self) -> list[ActiveTrade]:
         if not self.client:
             return []

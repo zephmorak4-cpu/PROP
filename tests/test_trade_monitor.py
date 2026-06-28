@@ -47,3 +47,11 @@ def test_trade_monitor_emergency_exit_on_stop_breach():
 
     assert updates[0].action == TradeManagementAction.EMERGENCY_EXIT
     assert trade.emergency_exit_sent is True
+
+
+def test_trade_monitor_does_not_emit_noisy_hold_update():
+    trade = make_buy_trade()
+
+    updates = make_monitor().evaluate_trade(trade, 1.1010)
+
+    assert updates == []

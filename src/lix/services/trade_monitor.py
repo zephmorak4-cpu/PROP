@@ -76,15 +76,6 @@ class TradeMonitor:
                     )
                 )
 
-        if not updates:
-            updates.append(
-                TradeUpdate(
-                    pair=trade.pair,
-                    action=TradeManagementAction.HOLD,
-                    confidence=70,
-                    reason="Trade remains valid. No management action required.",
-                )
-            )
         return updates
 
     async def _persist_trade_state(self, trade: ActiveTrade, update: TradeUpdate) -> None:

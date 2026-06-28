@@ -33,7 +33,9 @@ class MarketScanner:
             if not idea:
                 continue
             await self.repository.save_signal(idea)
-            await self.repository.create_active_trade(ActiveTrade.from_idea(idea))
+            active_trade = ActiveTrade.from_idea(idea)
+            if not await self.repository.active_trade_exists(active_trade):
+                await self.repository.create_active_trade(active_trade)
             await self.telegram.send_trade_idea(idea)
             emitted.append(idea)
         return emitted
