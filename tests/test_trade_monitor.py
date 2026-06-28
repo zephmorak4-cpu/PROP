@@ -1,3 +1,6 @@
+from datetime import UTC, datetime, timedelta
+
+from lix.config import Settings
 from lix.domain.models import ActiveTrade, Direction, TradeManagementAction
 from lix.services.trade_monitor import TradeMonitor
 
@@ -55,3 +58,34 @@ def test_trade_monitor_does_not_emit_noisy_hold_update():
     updates = make_monitor().evaluate_trade(trade, 1.1010)
 
     assert updates == []
+
+
+def test_trade_monitor_expires_stale_trade():
+    trade = make_buy_trade()
+    trade.opened_at = datetime.now(UTC) - timedelta(hours=13)
+    monitor = TradeMonitor(
+        repository=None,
+        telegram=None,
+        market_data=None,
+        settings=Settings(trade_expiry_hours=12),
+    )
+
+    update = monitor.evaluate_expiry(trade)
+
+    assert update is not None
+    assert update.action == TradeManagementAction.EXPIRE_TRADE
+
+
+def test_trade_monitor_keeps_fresh_trade_unexpired():
+    trade = make_buy_trade()
+    trade.opened_at = datetime.now(UTC) - timedelta(hours=2)
+    monitor = TradeMonitor(
+        repository=None,
+        telegram=None,
+        market_data=None,
+        settings=Settings(trade_expiry_hours=12),
+    )
+
+    update = monitor.evaluate_expiry(trade)
+
+    assert update is None

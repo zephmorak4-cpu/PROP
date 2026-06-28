@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     min_signal_confidence: int = 70
     scheduler_enabled: bool = True
     admin_api_key: str | None = None
+    signal_cooldown_minutes: int = 240
+    trade_expiry_hours: int = 12
 
     @field_validator("monitored_pairs", "telegram_admin_ids", mode="before")
     @classmethod

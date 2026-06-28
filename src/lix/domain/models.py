@@ -30,6 +30,7 @@ class TradeManagementAction(StrEnum):
     PARTIAL_PROFIT = "partial_profit"
     FULL_TAKE_PROFIT = "full_take_profit"
     EMERGENCY_EXIT = "emergency_exit"
+    EXPIRE_TRADE = "expire_trade"
 
 
 class Candle(BaseModel):

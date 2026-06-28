@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from supabase import Client, create_client
 
 from lix.config import Settings
@@ -31,6 +33,22 @@ class Repository:
             .eq("pair", trade.pair)
             .eq("direction", trade.direction.value)
             .eq("strategy", trade.strategy)
+            .limit(1)
+            .execute()
+        )
+        return bool(result.data)
+
+    async def recent_signal_exists(self, idea: TradeIdea, cooldown_minutes: int) -> bool:
+        if not self.client:
+            return False
+        cutoff = datetime.now(UTC) - timedelta(minutes=cooldown_minutes)
+        result = (
+            self.client.table("lix_signals")
+            .select("id")
+            .eq("pair", idea.pair)
+            .eq("direction", idea.direction.value)
+            .eq("strategy", idea.strategy)
+            .gte("created_at", cutoff.isoformat())
             .limit(1)
             .execute()
         )

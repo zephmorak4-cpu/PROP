@@ -41,6 +41,16 @@ class MarketScanner:
                     idea.strategy,
                 )
                 continue
+            if await self.repository.recent_signal_exists(
+                idea, self.settings.signal_cooldown_minutes
+            ):
+                logger.info(
+                    "Skipping setup inside cooldown for %s %s %s",
+                    idea.pair,
+                    idea.direction.value,
+                    idea.strategy,
+                )
+                continue
             await self.repository.save_signal(idea)
             await self.repository.create_active_trade(active_trade)
             await self.telegram.send_trade_idea(idea)

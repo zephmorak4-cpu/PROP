@@ -1,3 +1,6 @@
+from datetime import UTC, datetime, timedelta
+
+from lix.config import Settings
 from lix.db.repository import Repository
 from lix.domain.models import ActiveTrade, Direction, TradeManagementAction, TradeUpdate
 from lix.providers.market_data_provider import MarketDataProvider
@@ -10,15 +13,22 @@ class TradeMonitor:
         repository: Repository,
         telegram: TelegramClient,
         market_data: MarketDataProvider,
+        settings: Settings | None = None,
     ):
         self.repository = repository
         self.telegram = telegram
         self.market_data = market_data
+        self.settings = settings or Settings()
 
     async def evaluate(self) -> list[TradeUpdate]:
         updates: list[TradeUpdate] = []
         active_trades = await self.repository.list_active_trades()
         for trade in active_trades:
+            expiry_update = self.evaluate_expiry(trade)
+            if expiry_update:
+                await self.repository.close_active_trade(trade.pair, trade.opened_at.isoformat())
+                updates.append(expiry_update)
+                continue
             price = await self.market_data.get_current_price(trade.pair)
             if price is None:
                 continue
@@ -27,6 +37,20 @@ class TradeMonitor:
                 await self._persist_trade_state(trade, update)
             updates.extend(trade_updates)
         return updates
+
+    def evaluate_expiry(self, trade: ActiveTrade) -> TradeUpdate | None:
+        expires_at = trade.opened_at + timedelta(hours=self.settings.trade_expiry_hours)
+        if datetime.now(UTC) < expires_at:
+            return None
+        return TradeUpdate(
+            pair=trade.pair,
+            action=TradeManagementAction.EXPIRE_TRADE,
+            confidence=80,
+            reason=(
+                f"Trade idea expired after {self.settings.trade_expiry_hours} hours "
+                "without a completed lifecycle event."
+            ),
+        )
 
     def evaluate_trade(self, trade: ActiveTrade, price: float) -> list[TradeUpdate]:
         updates: list[TradeUpdate] = []
@@ -83,6 +107,7 @@ class TradeMonitor:
         if update.action in {
             TradeManagementAction.FULL_TAKE_PROFIT,
             TradeManagementAction.EMERGENCY_EXIT,
+            TradeManagementAction.EXPIRE_TRADE,
         }:
             await self.repository.close_active_trade(trade.pair, opened_at)
             return

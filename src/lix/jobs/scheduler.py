@@ -29,7 +29,7 @@ class LixScheduler:
         self.market_scanner = MarketScanner(settings, self.engine, self.repository, self.telegram)
         self.pair_ranking = PairRankingService(settings, self.market_data, self.repository)
         self.reporting = ReportingService(self.repository, self.telegram)
-        self.trade_monitor = TradeMonitor(self.repository, self.telegram, self.market_data)
+        self.trade_monitor = TradeMonitor(self.repository, self.telegram, self.market_data, settings)
 
     def start(self) -> None:
         self.scheduler.add_job(self.scan_market, "interval", minutes=1, id="lix_market_scan")
