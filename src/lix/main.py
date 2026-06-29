@@ -48,5 +48,6 @@ async def runtime_config():
         "alpha_vantage_configured": bool(settings.alpha_vantage_api_key),
         "finnhub_configured": bool(settings.finnhub_api_key),
         "financial_modeling_prep_configured": bool(settings.financial_modeling_prep_api_key),
+        "twelve_data_configured": bool(settings.twelve_data_api_key),
         "openai_configured": bool(settings.openai_api_key),
     }

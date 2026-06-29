@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     alpha_vantage_api_key: str | None = None
     finnhub_api_key: str | None = None
     financial_modeling_prep_api_key: str | None = None
+    twelve_data_api_key: str | None = None
     openai_api_key: str | None = None
 
     monitored_pairs: list[str] = Field(
