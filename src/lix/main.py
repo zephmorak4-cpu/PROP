@@ -42,6 +42,16 @@ async def runtime_config():
         "monitored_pairs": settings.monitored_pairs,
         "max_priority_pairs": settings.max_priority_pairs,
         "min_signal_confidence": settings.min_signal_confidence,
+        "active_strategy": "Asian Liquidity Sweep",
+        "asian_session_utc": [
+            settings.asian_session_start_hour_utc,
+            settings.asian_session_end_hour_utc,
+        ],
+        "london_session_utc": [
+            settings.london_session_start_hour_utc,
+            settings.london_session_end_hour_utc,
+        ],
+        "atr_period": settings.atr_period,
         "runtime_state_store": "supabase",
         "telegram_configured": settings.telegram_configured,
         "supabase_configured": settings.supabase_configured,

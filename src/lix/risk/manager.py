@@ -12,4 +12,11 @@ class RiskManager:
             return False
         if not idea.take_profits:
             return False
+        risk = abs(idea.entry - idea.stop_loss)
+        if risk <= 0:
+            return False
+        first_target = idea.take_profits[0]
+        reward = abs(first_target - idea.entry)
+        if reward / risk < 1.0:
+            return False
         return True

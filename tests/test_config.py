@@ -18,3 +18,9 @@ def test_supabase_runtime_state_is_the_default_store():
     settings = Settings()
 
     assert settings.supabase_configured is False
+
+
+def test_v2_default_confidence_requires_high_quality_setups():
+    settings = Settings()
+
+    assert settings.min_signal_confidence == 85

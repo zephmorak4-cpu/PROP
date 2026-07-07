@@ -8,6 +8,7 @@ from lix.db.repository import Repository
 from lix.intelligence.engine import LixIntelligenceEngine
 from lix.providers.fallback_market_data import FallbackMarketDataProvider
 from lix.providers.fmp_market_data import FinancialModelingPrepMarketDataProvider
+from lix.providers.news_provider import NewsProvider
 from lix.providers.twelve_data_market_data import TwelveDataMarketDataProvider
 from lix.services.market_scanner import MarketScanner
 from lix.services.pair_ranking_service import PairRankingService
@@ -28,7 +29,15 @@ class LixScheduler:
                 FinancialModelingPrepMarketDataProvider(settings.financial_modeling_prep_api_key),
             ]
         )
-        self.engine = LixIntelligenceEngine(settings=settings, market_data=self.market_data)
+        self.news_provider = NewsProvider(
+            settings.financial_modeling_prep_api_key,
+            settings.finnhub_api_key,
+        )
+        self.engine = LixIntelligenceEngine(
+            settings=settings,
+            market_data=self.market_data,
+            news_provider=self.news_provider,
+        )
         self.telegram = TelegramClient(settings)
         self.repository = Repository(settings)
         self.market_scanner = MarketScanner(settings, self.engine, self.repository, self.telegram)
@@ -39,7 +48,7 @@ class LixScheduler:
     def start(self) -> None:
         self.scheduler.add_job(self.scan_market, "interval", minutes=1, id="lix_market_scan")
         self.scheduler.add_job(self.refresh_pair_rankings, "interval", minutes=5, id="lix_pair_ranking")
-        self.scheduler.add_job(self.evaluate_trade_health, "interval", minutes=15, id="lix_trade_health")
+        self.scheduler.add_job(self.evaluate_trade_health, "interval", minutes=1, id="lix_trade_health")
         self.scheduler.add_job(self.send_daily_report, "cron", hour=21, minute=55, id="lix_daily_report")
         self.scheduler.start()
 

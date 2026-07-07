@@ -28,11 +28,23 @@ class Settings(BaseSettings):
         default_factory=lambda: ["EURUSD", "GBPUSD", "USDJPY", "GBPJPY", "EURJPY", "XAUUSD"]
     )
     max_priority_pairs: int = 4
-    min_signal_confidence: int = 70
+    min_signal_confidence: int = 85
     scheduler_enabled: bool = True
     admin_api_key: str | None = None
     signal_cooldown_minutes: int = 240
     trade_expiry_hours: int = 12
+    asian_session_start_hour_utc: int = 0
+    asian_session_end_hour_utc: int = 5
+    london_session_start_hour_utc: int = 7
+    london_session_end_hour_utc: int = 12
+    atr_period: int = 14
+    min_atr_pips: float = 4.0
+    sweep_buffer_atr_multiplier: float = 0.08
+    stop_buffer_atr_multiplier: float = 0.15
+    displacement_atr_multiplier: float = 1.2
+    min_reward_to_risk: float = 1.5
+    max_spread_pips: float = 3.0
+    news_block_minutes: int = 30
 
     @field_validator("monitored_pairs", "telegram_admin_ids", mode="before")
     @classmethod

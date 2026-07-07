@@ -9,7 +9,7 @@ class FakeEngine:
         return TradeIdea(
             pair=pair,
             direction=Direction.BUY,
-            strategy="London Expansion",
+            strategy="Asian Liquidity Sweep",
             confidence=75,
             entry=1.1,
             stop_loss=1.09,

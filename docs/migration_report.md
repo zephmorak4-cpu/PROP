@@ -1,73 +1,142 @@
-# LI-X Migration Report
+# LI-X v2 Migration Report
 
-## Workspace Audit
+## Objective
 
-Path audited: `C:\Users\HP\Documents\PROP`
+LI-X v2 is a controlled migration of the Telegram forex signal bot into a
+single-strategy decision-support system. It does not place trades.
 
-The workspace did not contain the previous Telegram forex signal system. It
-contained an empty Git repository when development started. Because of that,
-there were no legacy strategy engines, signal generators, schedulers, Telegram
-workers, or database models available to inspect or remove.
+The only active signal engine after this migration is:
 
-## Decision
+```text
+Asian Liquidity Sweep
+```
 
-Development started as a clean LI-X implementation. The project is structured so
-all trade decisions pass through one class:
+## Phase 1 Audit
 
-`lix.intelligence.engine.LixIntelligenceEngine`
+### Existing Trading Logic
 
-Legacy code should not be added beside it. If the previous system is later
-copied into this repository, old trading logic must be disabled before any
-scheduler or Telegram sender is enabled.
+| Component | Decision | Notes |
+| --- | --- | --- |
+| `src/lix/strategies/asian_liquidity_sweep.py` | Refactor | Rebuilt as the only active signal strategy. |
+| `src/lix/strategies/base.py` | Keep | Provider-neutral strategy interface. |
+| `src/lix/strategies/key_level_rejection.py` | Remove | Legacy multi-strategy path. |
+| `src/lix/strategies/liquidity_grab.py` | Remove | Legacy multi-strategy path. |
+| `src/lix/strategies/london_expansion.py` | Remove | Legacy multi-strategy path. |
+| `src/lix/strategies/monday_gap.py` | Remove | Legacy multi-strategy path. |
+| `src/lix/strategies/news_continuation.py` | Remove | Legacy multi-strategy path. |
+| `src/lix/strategies/volatility_expansion.py` | Remove | Legacy multi-strategy path. |
+| `src/lix/intelligence/engine.py` | Refactor | Now instantiates only Asian Liquidity Sweep. |
+| `src/lix/intelligence/confidence.py` | Refactor | Removed legacy strategy-specific confidence exceptions. |
+| `src/lix/risk/manager.py` | Refactor | Added basic RR validation. |
+| `src/lix/services/market_scanner.py` | Keep | Still handles duplicate suppression, persistence, and Telegram dispatch. |
+| `src/lix/services/trade_monitor.py` | Keep | Preserved trade lifecycle monitoring. |
+| `src/lix/jobs/scheduler.py` | Refactor | Scan and trade monitoring run every minute in-process. |
+| `src/lix/backtesting/engine.py` | Add | Backtesting scaffold for Asian Liquidity Sweep research. |
+| `src/lix/monitoring/loss_review.py` | Add | Loss-review scaffold for post-trade analysis. |
 
-## Preserved Infrastructure Target
+### Existing APIs
 
-The system is prepared to reuse existing infrastructure through environment
-variables:
+All integrations are preserved:
 
-- Telegram bot token, chat ID, and admin IDs
-- Supabase URL and keys
+- Telegram Bot API
+- Supabase
+- Twelve Data
+- Financial Modeling Prep
 - Alpha Vantage
 - Finnhub
-- Financial Modeling Prep for economic calendar data when available
-- OpenAI for report/explanation assistance only
+- OpenAI
+- Render / Railway deployment files
+- GitHub Actions external clock
 
-No secrets are committed.
+No new credentials are required for this migration.
 
-## Files Created
+### Existing Database
 
-- `src/lix/main.py`: FastAPI entrypoint and health endpoints
-- `src/lix/config.py`: environment-driven runtime configuration
-- `src/lix/intelligence/engine.py`: single LI-X decision engine
-- `src/lix/providers/market_data_provider.py`: provider abstraction
-- `src/lix/providers/alpha_vantage.py`: Alpha Vantage adapter
-- `src/lix/strategies/*`: modular strategy engines
-- `src/lix/telegram/client.py`: Telegram delivery service
-- `src/lix/db/repository.py`: Supabase persistence wrapper
-- `src/lix/cache/redis_cache.py`: Redis cache wrapper
-- `src/lix/jobs/scheduler.py`: LI-X-only scheduler
-- `db/migrations/001_lix_core.sql`: Supabase schema
+Historical tables are preserved:
 
-## Credential Status
+- `lix_signals`
+- `lix_trade_updates`
+- `lix_active_trades`
+- `lix_pair_rankings`
+- `lix_market_regimes`
+- `lix_strategy_performance`
+- `lix_risk_statistics`
+- `lix_daily_reports`
+- `lix_weekly_reports`
+- `lix_runtime_state`
 
-Provided by user, but not stored in repo:
+Added non-destructive migration:
 
-- Alpha Vantage API key
-- Finnhub API key
-- OpenAI API key
-- Supabase URL
-- Supabase anon key
-- Supabase service role key
-- Telegram bot token
-- Telegram chat/admin ID candidate
+- `db/migrations/002_lix_v2_asian_sweep.sql`
 
-Still needed or incomplete:
+New tables:
 
-- `FINANCIAL_MODELING_PREP_API_KEY`: provided by user, configure as an environment variable
+- `lix_performance_metrics`
+- `lix_loss_reviews`
+- `lix_market_sessions`
+- `lix_pair_statistics`
 
-## Current Limitations
+## Phase 2 Removed Legacy Trading Engine
 
-- Strategy engines other than Asian Liquidity Sweep are placeholders.
-- Supabase is now used for runtime state; Redis is not required.
-- No production Telegram send test has been run.
-- Supabase migration has not been applied.
+Removed files:
+
+- `src/lix/strategies/key_level_rejection.py`
+- `src/lix/strategies/liquidity_grab.py`
+- `src/lix/strategies/london_expansion.py`
+- `src/lix/strategies/monday_gap.py`
+- `src/lix/strategies/news_continuation.py`
+- `src/lix/strategies/volatility_expansion.py`
+
+The strategy directory now contains only:
+
+- `base.py`
+- `asian_liquidity_sweep.py`
+
+## Phase 3 New Asian Sweep Engine
+
+The strategy now requires:
+
+- Asian session high/low from configured UTC session hours
+- London-only entries
+- Clear liquidity sweep beyond an ATR-based buffer
+- Rejection candle or displacement candle
+- Market structure shift after the sweep
+- ATR minimum volatility filter
+- Structural stop beyond the sweep
+- Minimum reward-to-risk on TP1
+- Confidence threshold default of 85
+
+## Scheduler
+
+In-process scheduler:
+
+- Market scan: every 1 minute
+- Trade monitoring: every 1 minute
+- Pair ranking/news cache refresh cadence: 5 minutes
+- Daily report: configured end-of-day cron
+
+Render free mode still uses the external GitHub Actions clock because the Render
+instance can sleep.
+
+## Tests
+
+Validation includes:
+
+- Asian low sweep BUY detection
+- Asian high sweep SELL detection
+- London session rejection
+- Single active engine validation
+- Backtesting module behavior
+- Loss-review module behavior
+- Scanner duplicate and cooldown behavior
+- Trade monitor lifecycle behavior
+- Provider parsing
+- Telegram rejection behavior
+
+## Remaining Risks
+
+- Live signal volume will drop because the confidence gate is now 85 and the
+  setup requires full sweep, rejection, structure shift, and RR confirmation.
+- Spread filtering is passive until a market-data provider returns spread.
+- Loss review and backtesting scaffolds exist, but full historical report export
+  still needs a later implementation pass.
