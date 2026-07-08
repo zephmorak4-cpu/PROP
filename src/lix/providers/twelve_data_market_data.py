@@ -20,6 +20,7 @@ class TwelveDataMarketDataProvider(MarketDataProvider):
             "symbol": self._map_symbol(pair),
             "interval": self._map_timeframe(timeframe),
             "outputsize": str(limit),
+            "timezone": "UTC",
             "apikey": self.api_key,
         }
         try:
